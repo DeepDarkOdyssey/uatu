@@ -1,0 +1,17 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+yapf = "*"
+mypy = "*"
+
+[packages]
+sqlalchemy = "*"
+gitpython = "*"
+pyyaml = "*"
+
+[requires]
+python_version = "3.6"
