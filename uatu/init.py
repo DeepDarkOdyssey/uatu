@@ -243,7 +243,7 @@ def add(repo: Repo, file_path: str):
         print(f'{file_path} has already been added to git repo')
     else:
         file_size = os.path.getsize(file_path)
-        if file_size > 1000000:
+        if file_size > 10000000:
             repo.git.execute(['git', 'lfs', 'track', file_path])
             repo.git.execute(['git', 'add', file_path])
         else:
