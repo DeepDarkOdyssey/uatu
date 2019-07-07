@@ -2,3 +2,4 @@
 *.py[doc]
 .uatu/
 .mypy_cache/
+uatu.egg-info/

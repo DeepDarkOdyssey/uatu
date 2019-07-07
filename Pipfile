@@ -7,11 +7,13 @@ verify_ssl = true
 pylint = "*"
 yapf = "*"
 mypy = "*"
+uatu = {editable = true,path = "."}
 
 [packages]
 sqlalchemy = "*"
 gitpython = "*"
 pyyaml = "*"
+click = "*"
 
 [requires]
 python_version = "3.6"
