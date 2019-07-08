@@ -66,14 +66,19 @@ def watch(files, experiment, message):
                 changed_files.append(relpath)
                 add_file(repo, file_path)
         if len(changed_files) > 0:
-            commit = repo.commit(message)
-            for relpath in changed_files:
-                get_node(sess, str(commit), relpath)
-            click.echo(
-                f'Uatu is now watching {changed_files}, commit_id: {str(commit)}'
-            )
+            repo.git.commit('-m', message)
         else:
             click.echo(f'None of these files has been modified')
+        
+        commit_id = str(next(repo.iter_commits()))
+        for relpath in changed_files:
+            get_node(sess, commit_id, relpath)
+        click.echo(
+            f'Uatu is now watching {changed_files}, commit_id: {commit_id}'
+        )
+    
+    if experiment:
+        pass
 
 
 @cli.command('experiment')

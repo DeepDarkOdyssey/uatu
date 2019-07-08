@@ -1,20 +1,34 @@
 from os import getcwd
 from os.path import dirname, join, exists, getsize
+import git
 from git import Repo
 from git.refs.log import RefLog
 from .utils import get_relative_path
 import click
 
 
+def get_repo(repo_dir: str = getcwd()) -> Repo:
+    return Repo.init(repo_dir)
+
 
 def get_tracked_files(repo: Repo) -> list:
     return repo.git.ls_files().split()
 
 
-def git_add(repo: Repo, file_path: str, limited_size=1000000):
+def get_changed_files(repo: Repo) -> list:
+    file_list = repo.git.status('-s').split('\n')
+    changed_files = []
+    for status_file in file_list:
+        status, fpath = status_file.split()
+        if status in ['MM', 'M', 'A']:
+            changed_files.append(fpath)
+    return changed_files
+
+
+def add_file(repo: Repo, file_path: str, limited_size=1000000):
     tracked_files = get_tracked_files(repo)
     if file_path in tracked_files:
-        print(f'{file_path} has already been added to git repo')
+        click.echo(f'{file_path} has already been tracked by git.')
     else:
         file_size = getsize(file_path)
         if file_size >= limited_size:
@@ -24,7 +38,7 @@ def git_add(repo: Repo, file_path: str, limited_size=1000000):
             repo.git.execute(['git', 'add', file_path])
 
 
-def get_ignore_file(repo_dir) -> str:
+def get_ignore_file(repo_dir: str) -> str:
     ignore_file = join(repo_dir, '.gitignore')
     if not exists(ignore_file):
         f = open(ignore_file, 'w')
@@ -56,7 +70,7 @@ def check_git_initialized(repo_dir: str = getcwd()) -> bool:
 
 
 def initialize_git(repo_dir: str = getcwd()) -> Repo:
-    repo = Repo.init(repo_dir)
+    repo = get_repo(repo_dir)
     ignore_file = get_ignore_file(repo_dir)
     add_git_ignore(ignore_file, '.uatu/')
 
@@ -64,7 +78,8 @@ def initialize_git(repo_dir: str = getcwd()) -> Repo:
     if not exists(attributes_file):
         f = open(attributes_file, 'w')
         f.close()
-    git_add(repo, get_relative_path(ignore_file, repo_dir))
-    git_add(repo, get_relative_path(attributes_file, repo_dir))
+    add_file(repo, get_relative_path(ignore_file, repo_dir))
+    add_file(repo, get_relative_path(attributes_file, repo_dir))
+    repo.commit('Initialize uatu')
 
     return repo
