@@ -1,8 +1,10 @@
 import click
 from os import getcwd
-from .init import check_uatu_initialized, initialize_uatu, clean_uatu
+from .init import check_uatu_initialized, initialize_uatu, clean_uatu, get_uatu_config
 from .database import initialize_db
-from .git import check_git_initialized, initialize_git
+from .git import check_git_initialized, initialize_git, get_repo, get_changed_files, add_file
+from .utils import get_relative_path
+from .database import initialize_db, get_node
 
 
 @click.group()
@@ -11,9 +13,8 @@ def cli():
 
 
 @cli.command()
-@click.option('--force', '-f', is_flag=True)
 @click.option('--config_file', type=click.Path(exists=True, dir_okay=False))
-def init(force, config_file):
+def init(config_file):
     if not check_git_initialized():
         click.confirm(
             'This folder is not a git repo, do you want to initialize git?',
@@ -25,7 +26,7 @@ def init(force, config_file):
         click.confirm(
             'Uatu is watching this project, do you still want to initialize?',
             abort=True)
-    initialize_uatu()
+    initialize_uatu(user_config=config_file)
     click.echo('Uatu has arrived!')
 
 
@@ -41,13 +42,38 @@ def clean(dir_path):
 @cli.command('watch')
 @click.option('--file',
               '-f',
-              'file_',
+              'files',
+              multiple=True,
               type=click.Path(exists=True, dir_okay=False))
 @click.option('--expr', '-e', 'experiment')
-def watch(file_, experiment):
-    initialize_db()
-    if file_:
-        pass
+@click.option('--message',
+              '-m',
+              'message',
+              prompt='Please enter a message for `git commit`')
+def watch(files, experiment, message):
+    if files:
+        if not check_git_initialized() or not check_uatu_initialized():
+            click.echo('This project has\'t been initialized yet. \
+                Please try `uatu init`.')
+            return
+        repo = get_repo()
+        sess = initialize_db(get_uatu_config()['database_file'])
+        all_changed_files = get_changed_files(repo)
+        changed_files = []
+        for file_path in files:
+            relpath = get_relative_path(file_path)
+            if relpath in all_changed_files:
+                changed_files.append(relpath)
+                add_file(repo, file_path)
+        if len(changed_files) > 0:
+            commit = repo.commit(message)
+            for relpath in changed_files:
+                get_node(sess, str(commit), relpath)
+            click.echo(
+                f'Uatu is now watching {changed_files}, commit_id: {str(commit)}'
+            )
+        else:
+            click.echo(f'None of these files has been modified')
 
 
 @cli.command('experiment')

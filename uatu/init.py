@@ -52,7 +52,8 @@ def initialize_uatu(dir_path: str = os.getcwd(),
             'log_file': '.uatu/log.txt'
         }
     else:
-        uatu_config = yaml.load(user_config)
+        with open(user_config) as f:
+            uatu_config = yaml.safe_load(f)
 
     with open(join(uatu_dir, 'config.yaml'), 'w') as yaml_file:
         yaml.dump(uatu_config, yaml_file)
@@ -74,5 +75,6 @@ def initialize_uatu(dir_path: str = os.getcwd(),
     return sess
 
 
-def experiment_ls(sess, repo):
-    print(sess.query(Experiment).all())
+def get_uatu_config(dir_path: str = os.getcwd()) -> dict:
+    with open(join(dir_path, '.uatu', 'config.yaml')) as f:
+        return yaml.safe_load(f)
