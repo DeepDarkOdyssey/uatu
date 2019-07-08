@@ -1,4 +1,5 @@
 import json
+import click
 from typing import Union, List
 from copy import deepcopy
 from git import Repo
@@ -32,12 +33,16 @@ def add_edge(sess: Session, parent: Union[File, Node],
 def get_file(sess: Session, file_path: str) -> File:
     file_ = sess.query(File).filter_by(path=file_path).first()
     if file_:
-        print(f'File {file_.id} {file_.path} exists')
+        click.echo(f'File {file_.id} {file_.path} exists')
     else:
         file_ = File(id=id_generator(8, 'file'), path=file_path)
         sess.add(file_)
         sess.commit()
     return file_
+
+
+def get_all_files(sess: Session) -> list:
+    return sess.query(File).all()
 
 
 def get_pipeline(sess: Session,
@@ -71,16 +76,16 @@ def get_pipeline(sess: Session,
     return pipeline
 
 
-def get_node(sess: Session, repo: Repo, file_path: str) -> Node:
+def get_node(sess: Session, commit_id: str, file_path: str) -> Node:
     node_file = get_file(sess, file_path)
-    commit_id = repo.git.execute(['git', 'log', '--', file_path])
-    print('****', commit_id)
-    commit_id = repo.git.execute(['git', 'log', '--',
-                                  file_path]).split('\n')[0].split()[1]
+    # commit_id = repo.git.execute(['git', 'log', '--', file_path])
+    # print('****', commit_id)
+    # commit_id = repo.git.execute(['git', 'log', '--',
+    #                               file_path]).split('\n')[0].split()[1]
     node = sess.query(Node).filter_by(file_id=node_file.id,
                                       commit_id=commit_id).first()
     if node:
-        print(f'Node {node.id} {node.file.path} exists')
+        click.echo(f'Node {node.id} {node.file.path} exists')
     else:
         node = Node(id=id_generator(16, 'node'),
                     file_id=node_file.id,
@@ -88,6 +93,10 @@ def get_node(sess: Session, repo: Repo, file_path: str) -> Node:
         sess.add(node)
         sess.commit()
     return node
+
+
+def get_all_nodes(sess: Session) -> list:
+    return sess.query(Node).all()
 
 
 def get_experiment(sess: Session,
@@ -144,3 +153,7 @@ def get_experiment(sess: Session,
         sess.add(experiment)
         sess.commit()
     return experiment
+
+if __name__ == "__main__":
+    sess = initialize_db('./.uatu/uatu.db')
+    get_all_nodes(sess)

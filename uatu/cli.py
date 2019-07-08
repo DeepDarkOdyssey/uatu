@@ -4,7 +4,7 @@ from .init import check_uatu_initialized, initialize_uatu, clean_uatu, get_uatu_
 from .database import initialize_db
 from .git import check_git_initialized, initialize_git, get_repo, get_changed_files, add_file
 from .utils import get_relative_path
-from .database import initialize_db, get_node
+from .database import initialize_db, get_node, get_all_files, get_all_nodes
 
 
 @click.group()
@@ -79,6 +79,24 @@ def watch(files, experiment, message):
     
     if experiment:
         pass
+
+@cli.command('file')
+def file_cli():
+    sess = initialize_db(get_uatu_config()['database_file'])
+    files = get_all_files(sess)
+    for f in files:
+        click.echo(f'ID: {f.id} ------- PATH: {f.path}')
+
+
+@cli.command('node')
+def node_cli():
+    sess = initialize_db(get_uatu_config()['database_file'])
+    nodes = get_all_nodes(sess)
+    for node in nodes:
+        click.echo(
+            f'ID: {node.id[:3]}...{node.id[-3:]}, path: {node.file.path}, '
+            f'COMMITID: {node.commit_id[:3]}...{node.commit_id[-3:]}'
+        )
 
 
 @cli.command('experiment')
