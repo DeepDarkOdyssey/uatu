@@ -25,6 +25,20 @@ def get_changed_files(repo: Repo) -> list:
     return changed_files
 
 
+def get_ignore_file(repo_dir: str) -> str:
+    ignore_file = join(repo_dir, '.gitignore')
+    if not exists(ignore_file):
+        f = open(ignore_file, 'w')
+        f.close()
+
+    return ignore_file
+
+
+def get_file_last_commit(repo: Repo, file_path: str) -> str:
+    print('****', file_path)
+    return str(next(repo.iter_commits(paths=file_path)))
+
+
 def add_file(repo: Repo, file_path: str, limited_size=1000000):
     tracked_files = get_tracked_files(repo)
     if file_path in tracked_files:
@@ -36,15 +50,6 @@ def add_file(repo: Repo, file_path: str, limited_size=1000000):
             repo.git.execute(['git', 'add', file_path])
         else:
             repo.git.execute(['git', 'add', file_path])
-
-
-def get_ignore_file(repo_dir: str) -> str:
-    ignore_file = join(repo_dir, '.gitignore')
-    if not exists(ignore_file):
-        f = open(ignore_file, 'w')
-        f.close()
-
-    return ignore_file
 
 
 def add_git_ignore(ignore_file: str, path: str):
@@ -83,3 +88,9 @@ def initialize_git(repo_dir: str = getcwd()) -> Repo:
     repo.commit('Initialize uatu')
 
     return repo
+
+
+if __name__ == "__main__":
+    repo = get_repo()
+    print(get_file_last_commit(repo, './uatu/run.py'))
+    print(get_file_last_commit(repo, './uatu/test.py'))

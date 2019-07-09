@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from .orm import Base, File, Pipeline, Node, Experiment
 from .utils import id_generator
+from .git import get_file_last_commit
 
 
 def initialize_db(db_file: str):
@@ -78,10 +79,6 @@ def get_pipeline(sess: Session,
 
 def get_node(sess: Session, commit_id: str, file_path: str) -> Node:
     node_file = get_file(sess, file_path)
-    # commit_id = repo.git.execute(['git', 'log', '--', file_path])
-    # print('****', commit_id)
-    # commit_id = repo.git.execute(['git', 'log', '--',
-    #                               file_path]).split('\n')[0].split()[1]
     node = sess.query(Node).filter_by(file_id=node_file.id,
                                       commit_id=commit_id).first()
     if node:
@@ -113,13 +110,15 @@ def get_experiment(sess: Session,
         if type(file_path) == list:
             node, node_id = [], []
             for sub_file in file_path:
-                sub_node = get_node(sess, repo, sub_file)
+                sub_file_commit_id = get_file_last_commit(repo, sub_file)
+                sub_node = get_node(sess, sub_file_commit_id, sub_file)
                 node.append(sub_node)
                 node_id.append(sub_node.id)
             nodes.append(node)
             node_ids.append(node_id)
         else:
-            node = get_node(sess, repo, file_path)
+            file_commit_id = get_file_last_commit(repo, file_path)
+            node = get_node(sess, file_commit_id, file_path)
             nodes.append(node)
             node_ids.append(node.id)
 

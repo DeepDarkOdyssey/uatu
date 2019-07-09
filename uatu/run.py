@@ -3,7 +3,8 @@ import json
 from typing import Union
 from git import Repo
 from functools import wraps
-from .init import init, check_initialized, get_experiment
+from .database import initialize_db, get_experiment
+from .init import initialize_uatu, get_uatu_config
 
 
 class Run(object):
@@ -15,7 +16,9 @@ class Run(object):
         self.metric = None
 
         self.cwd = os.getcwd()
-        self.sess, _ = init()
+
+        uatu_config = get_uatu_config()
+        self.sess = initialize_db(uatu_config['database_file'])
         self.repo = Repo(path=self.cwd)
 
     def __call__(self, func):
