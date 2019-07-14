@@ -35,7 +35,6 @@ def get_ignore_file(repo_dir: str) -> str:
 
 
 def get_file_last_commit(repo: Repo, file_path: str) -> str:
-    print('****', file_path)
     return str(next(repo.iter_commits(paths=file_path)))
 
 
