@@ -32,8 +32,8 @@ class Run(object):
             repo=self.repo,
             description=description,
             file_lists=file_lists,
-            config=json.dumps(config),
-            hparams=json.dumps(hparams)
+            config=config,
+            hparams=hparams
         )
     
     def save(self, metrics: dict = {}):

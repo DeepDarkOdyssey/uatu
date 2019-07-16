@@ -1,7 +1,8 @@
 import click
-from subprocess import Popen
+import subprocess
 from os import getcwd
 from os.path import isfile, sep, join
+from inspect import getmodule, stack
 from .init import check_uatu_initialized, initialize_uatu, clean_uatu, get_uatu_config
 from .database import initialize_db
 from .git import (
@@ -28,7 +29,7 @@ def init(config_file):
             "This folder is not a git repo, do you want to initialize git?", abort=True
         )
         initialize_git()
-    click.echo("Git repo has been initialized")
+    click.echo("Git repo is already initialized")
 
     if check_uatu_initialized():
         click.confirm(
@@ -86,15 +87,20 @@ def watch(files, message: str, append: bool):
 
 @cli.command(context_settings={"ignore_unknown_options": True})
 @click.argument(
-    "script", type=click.Path(exists=True, dir_okay=False), nargs=1, required=True
+    "script", type=str, nargs=1, required=True
 )
 @click.argument("args", type=str, nargs=-1)
-def run(script, args):
-    if not script.endswith('.py'):
-        click.echo("Uatu only support python scripts!")
-        click.get_current_context().abort()
+@click.option('--module', '-m', is_flag=True)
+def run(script, args, module):
+    if module:
+        subprocess.run('python -m ' + ' '.join([script] + list(args)), shell=True)
     else:
-        Popen('python ' +  ' '.join([script] + list(args)), shell=True)
+        if not script.endswith('.py'):
+            click.echo("Uatu only support python scripts!")
+            click.get_current_context().abort()
+        else:
+            print('running python script')
+            subprocess.run('python ' +  ' '.join([script] + list(args)), shell=True)
 
 
 @cli.command("file")

@@ -87,9 +87,3 @@ def initialize_git(repo_dir: str = getcwd()) -> Repo:
     repo.commit('Initialize uatu')
 
     return repo
-
-
-if __name__ == "__main__":
-    repo = get_repo()
-    print(get_file_last_commit(repo, './uatu/run.py'))
-    print(get_file_last_commit(repo, './uatu/test.py'))

@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from .orm import Base, File, Pipeline, Node, Experiment
 from .utils import id_generator, get_relative_path
-from .git import get_file_last_commit
+from .git import get_file_last_commit, get_tracked_files, add_file
 
 
 def initialize_db(db_file: str):
@@ -27,13 +27,14 @@ def get_file(
 
     if file_path:
         rel_path = get_relative_path(file_path)
-        file_ = sess.query(File).filter_by(path=file_path).first()
+        file_ = sess.query(File).filter_by(path=rel_path).first()
     if file_id:
         file_ = sess.query(File).fieter_by(id=file_id).first()
+
     if file_:
         click.echo(f"File {file_.id} {file_.path} exists")
     else:
-        file_ = File(id=id_generator(8, "file"), path=file_path)
+        file_ = File(id=id_generator(8, "file"), path=rel_path)
         sess.add(file_)
         sess.commit()
     return file_
@@ -46,12 +47,12 @@ def get_all_files(sess: Session) -> list:
 def add_edge(
     sess: Session, predecessor: Union[File, Node], successor: Union[File, Node]
 ) -> NoReturn:
-    preds_successor_ids = deepcopy(json.loads(predecessor.successor_ids))
-    preds_successor_ids = list(set(preds_successor_ids).add(successor.id))
-    predecessor.successor_ids = json.dumps(preds_successor_ids.sort())
-    sucs_predecessor_ids = deepcopy(json.loads(successor.predecessor_ids))
-    sucs_predecessor_ids = list(set(sucs_predecessor_ids).add(predecessor.id))
-    successor.predecessor_ids = json.dumps(sucs_predecessor_ids.sort())
+    preds_successor_ids = deepcopy(set(json.loads(predecessor.successor_ids)))
+    preds_successor_ids.add(successor.id)
+    predecessor.successor_ids = json.dumps(sorted(list(preds_successor_ids)))
+    sucs_predecessor_ids = deepcopy(set(json.loads(successor.predecessor_ids)))
+    sucs_predecessor_ids.add(predecessor.id)
+    successor.predecessor_ids = json.dumps(sorted(list(sucs_predecessor_ids)))
     sess.commit()
 
 
@@ -71,7 +72,7 @@ def get_pipeline(
             file_id_list = []
             for file_path in file_path_list:
                 file_id_list.append(get_file(sess, file_path=file_path).id)
-            file_id_lists.append(file_id_list.sort())
+            file_id_lists.append(sorted(file_id_list))
         pipeline = (
             sess.query(Pipeline)
             .filter_by(file_id_lists=json.dumps(file_id_lists))
@@ -88,7 +89,9 @@ def get_pipeline(
                     successor = get_file(sess, succ_file_path)
                     add_edge(sess, predecessor, successor)
 
-        pipeline = Pipeline(id=id_generator(8, "pipeline"), file_id_lists=file_id_lists)
+        pipeline = Pipeline(
+            id=id_generator(8, "pipeline"), file_id_lists=json.dumps(file_id_lists)
+        )
         sess.add(pipeline)
         sess.commit()
     return pipeline
@@ -127,31 +130,51 @@ def get_experiment(
         experiment = sess.query(Experiment).filter_by(id=experiment_id).first()
     else:
         if description is None:
-            raise ValueError('Description should be provided when creating a new experiment')
+            raise ValueError(
+                "Description should be provided when creating a new experiment"
+            )
         pipeline = get_pipeline(sess, file_lists=file_lists)
         config = "{}" if config is None else json.dumps(config)
         hparams = "{}" if hparams is None else json.dumps(hparams)
 
-        node_id_lists = []
+        node_id_lists = [[] for _ in range(len(file_lists))]
+        tracked_files = get_tracked_files(repo)
+        first_add = True
         for i in range(len(file_lists) - 1):
-            if len(file_lists[i]) > 1 and len(file_lists[i+1]) > 1:
+            if len(file_lists[i]) > 1 and len(file_lists[i + 1]) > 1:
                 raise ValueError("There should be no consecutive multiple files")
-            node_id_list = []
             for pred_file_path in file_lists[i]:
-                pred_commit_id = get_file_last_commit(repo, pred_file_path)
+                pred_rel_path = get_relative_path(pred_file_path)
+                if pred_rel_path not in tracked_files:
+                    add_file(repo, pred_rel_path)
+                    if first_add:
+                        repo.git.commit("-m", description)
+                        first_add = False
+                    else:
+                        repo.git.commit("-m", description, "--amend")
+                pred_commit_id = get_file_last_commit(repo, pred_rel_path)
                 predecessor = get_node(sess, pred_commit_id, pred_file_path)
-                node_id_list.append(predecessor.id)
-                for succ_file_path in file_lists[i+1]:
-                    succ_commit_id = get_file_last_commit(repo, succ_file_path)
+                node_id_lists[i].append(predecessor.id)
+
+                for succ_file_path in file_lists[i + 1]:
+                    succ_rel_path = get_relative_path(succ_file_path)
+                    if succ_rel_path not in tracked_files:
+                        add_file(repo, succ_rel_path)
+                        if first_add:
+                            repo.git.commit("-m", description)
+                            first_add = False
+                        else:
+                            repo.git.commit("-m", description, "--amend")
+                    succ_commit_id = get_file_last_commit(repo, succ_rel_path)
                     successor = get_node(sess, succ_commit_id, succ_file_path)
+                    node_id_lists[i + 1].append(successor.id)
                     add_edge(sess, predecessor, successor)
-            node_id_lists.append(node_id_list)
 
         experiment = Experiment(
             id=id_generator(16, "experiment"),
             description=description,
             pipeline_id=pipeline.id,
-            node_id_lists=node_id_lists,
+            node_id_lists=json.dumps(node_id_lists),
             config=config,
             hparams=hparams,
         )
