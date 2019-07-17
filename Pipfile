@@ -1,17 +1,18 @@
 [[source]]
 name = "pypi"
-url = "https://pypi.tuna.tsinghua.edu.cn/simple/"
+url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
 pylint = "*"
-yapf = "*"
-mypy = "*"
+black = "*"
+uatu = {editable = true,path = "."}
 
 [packages]
 sqlalchemy = "*"
-gitpython = "*"
 pyyaml = "*"
+gitpython = "*"
+click = "*"
 
 [requires]
-python_version = "3.6"
+python_version = "3.7"

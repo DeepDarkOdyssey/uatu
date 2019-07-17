@@ -9,7 +9,7 @@ def id_generator(len, salt='test'):
 
 
 def get_relative_path(path: str, cwd: str = os.getcwd()):
-    if not path.startswith('/'):
+    if not path.startswith('/') and not path.startswith('./'):
         return path
     else:
         return os.path.relpath(path, cwd)
@@ -17,5 +17,6 @@ def get_relative_path(path: str, cwd: str = os.getcwd()):
 def check_file_exists(file_path: str) -> bool:
     pass
 
+
 if __name__ == "__main__":
-    print(id_generator('test', 6))
+    print(get_relative_path('./uatu/cli.py'))
