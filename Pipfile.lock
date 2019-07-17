@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "b5bbbf1b78e0d73beef11a804bef9a1e867e52b0c91590b4e16ee744bcade3c9"
+            "sha256": "a3f540c10f6d48f68b0db007de1a58ebe5c86aa65dc96855e213ffc329e82e4a"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -189,8 +189,13 @@
             "markers": "implementation_name == 'cpython'",
             "version": "==1.4.0"
         },
+        "uatu": {
+            "editable": true,
+            "path": "."
+        },
         "wrapt": {
             "hashes": [
+                "sha256:49001e0d65615809a4100ffc99d10e659c8c32d1ff8a679197f1901b07c769e2",
                 "sha256:565a021fd19419476b9362b05eeaa094178de64f8361e44468f9e9d7843901e1"
             ],
             "version": "==1.11.2"

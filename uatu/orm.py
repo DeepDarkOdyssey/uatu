@@ -16,8 +16,10 @@ class File(Base):  # type: ignore
     successor_ids = Column(Text, default="[]")
 
     def __repr__(self):
-        return f"<File id={self.id}, path={self.path}, nodes={self.nodes},\
-        predecessor_ids={self.predecessor_ids}, successor_ids={self.successor_ids}>"
+        return (
+            f"<File id={self.id}, path={self.path}, nodes={self.nodes},"
+            f"predecessor_ids={self.predecessor_ids}, successor_ids={self.successor_ids}>"
+        )
 
 
 class Node(Base):  # type: ignore
@@ -30,9 +32,11 @@ class Node(Base):  # type: ignore
     successor_ids = Column(Text, default="[]")
 
     def __repr__(self):
-        return f"<Node id={self.id}, file_id={self.file_id}, file={self.file},\
-                commit_id={self.commit_id}, predecessor_ids={self.predecessor_ids},\
-                successor_ids={self.successor_ids}>"
+        return (
+            f"<Node id={self.id}, file_id={self.file_id}, file={self.file},"
+            f"commit_id={self.commit_id}, predecessor_ids={self.predecessor_ids},"
+            f"successor_ids={self.successor_ids}>"
+        )
 
 
 class Pipeline(Base):  # type: ignore
@@ -44,8 +48,10 @@ class Pipeline(Base):  # type: ignore
     experiments = relationship("Experiment", backref="pipeline")
 
     def __repr__(self):
-        return f"<Pipeline id={self.id}, description={self.description},\
-            file_id_lists={self.file_id_lists}, experiments={self.experiments}>"
+        return (
+            f"<Pipeline id={self.id}, description={self.description},"
+            f"file_id_lists={self.file_id_lists}, experiments={self.experiments}>"
+        )
 
 
 class Experiment(Base):  # type: ignore
@@ -60,6 +66,8 @@ class Experiment(Base):  # type: ignore
     metrics = Column(Text, default="{}")
 
     def __repr__(self):
-        return f"<Experiment id={self.id}, description={self.description},\
-                pipeline_id={self.pipeline_id}, node_ids={self.node_ids},\
-                config={self.config}, hparams={self.hparams}>"
+        return (
+            f"<Experiment id={self.id}, description={self.description},"
+            f"pipeline_id={self.pipeline_id}, node_id_lists={self.node_id_lists},"
+            f"config={self.config}, hparams={self.hparams}, metrics={self.metrics}>"
+        )
