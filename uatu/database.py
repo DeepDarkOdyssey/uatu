@@ -11,11 +11,11 @@ from .utils import id_generator, get_relative_path
 from .git import get_file_last_commit, get_tracked_files, add_file
 
 
-def initialize_db(db_file: str):
+def initialize_db(db_file: str) -> Session:
     engine = create_engine(f"sqlite:///{db_file}?check_same_thread=False", echo=False)
     Base.metadata.create_all(engine, checkfirst=True)
-    Session = sessionmaker(bind=engine)
-    session = Session()
+    Session_cls = sessionmaker(bind=engine)
+    session = Session_cls()
     return session
 
 
@@ -114,7 +114,7 @@ def get_pipeline(
 
     if pipeline is None:
         for i in range(len(file_lists) - 1):
-            if len(file_lists[i]) > 1 and len(file_lists[i + 1] > 1):
+            if len(file_lists[i]) > 1 and len(file_lists[i + 1]) > 1:
                 raise ValueError("There should be no consecutive multiple files")
             for pred_file_path in file_lists[i]:
                 predecessor = get_file(sess, pred_file_path)
