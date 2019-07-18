@@ -2,21 +2,25 @@ import click
 import subprocess
 from os import getcwd
 from typing import Tuple
-from uatu.git import (
+from sqlalchemy.orm import Session
+from git import Repo
+from uatu.core.git import (
     check_git_initialized,
     initialize_git,
     get_repo,
     get_changed_files,
     add_file,
+    get_last_commit,
+    need_commit
 )
-from uatu.init import (
+from uatu.core.init import (
     check_uatu_initialized,
     initialize_uatu,
     get_uatu_config,
     clean_uatu,
 )
-from uatu.database import initialize_db, get_node
-from uatu.utils import get_relative_path
+from uatu.core.database import initialize_db, get_node, get_file
+from uatu.core.utils import get_relative_path
 
 
 @click.group()
@@ -66,32 +70,43 @@ def clean(dir_path):
 @cli.command()
 @click.argument("files", nargs=-1, type=click.Path(exists=True, dir_okay=False))
 @click.option("--message", "-m")
-@click.option("--append", "-a", is_flag=True, default=False)
+@click.option("--amend", "-a", is_flag=True, default=False)
 @click.pass_context
-def watch(ctx: click.Context, files: Tuple[str], message: str, append: bool):
-    repo = ctx.obj["repo"]
+def watch(ctx: click.Context, files: Tuple[str], message: str, amend: bool):
+    repo: Repo = ctx.obj["repo"]
+    sess: Session = ctx.obj["sess"]
     all_changed_files = get_changed_files(repo)
 
-    changed_files = []
+    files2watch = set()
     for file_path in files:
-        relpath = get_relative_path(file_path)
-        if relpath in all_changed_files:
-            changed_files.append(relpath)
-            add_file(repo, file_path)
-    if len(changed_files) > 0:
-        if not message:
-            message = click.prompt("Please enter a message for `git commit`")
-        if append:
-            repo.git.commit("-m", message, "--amend")
+        rel_path = get_relative_path(file_path, repo.working_dir)
+        last_commit_id = get_last_commit(repo, file_path)
+        if not last_commit_id:
+            files2watch.add(rel_path)
+        elif rel_path in all_changed_files:
+            files2watch.add(rel_path)
         else:
+            file_ = get_file(sess, file_path=file_path, create=False)
+            if file_:
+                node = get_node(sess, file_path=file_.path, create=False)
+                if not node:
+                    files2watch.add(rel_path)
+
+    if need_commit(repo):
+        if amend:
+            repo.git.commit("--amend")
+        else:
+            if not message:
+                message = click.prompt("Please enter a message for `git commit`")
             repo.git.commit("-m", message)
     else:
         click.echo(f"None of these files has been modified")
 
-    commit_id = str(next(repo.iter_commits()))
-    for relpath in changed_files:
-        get_node(ctx.obj["sess"], commit_id, relpath)
-    click.echo(f"Uatu is now watching {changed_files}, commit_id: {commit_id}")
+    if files2watch:
+        commit_id = get_last_commit(repo)
+        for file_path in files2watch:
+            get_node(sess, file_path=file_path, commit_id=commit_id)
+        click.echo(f"Uatu is now watching {files2watch}, commit_id: {commit_id}")
 
 
 @cli.command(context_settings={"ignore_unknown_options": True})

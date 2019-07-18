@@ -6,7 +6,8 @@ verify_ssl = true
 [dev-packages]
 pylint = "*"
 black = "*"
-uatu = {editable = true,path = "."}
+uatu = {path = ".",editable = true}
+pytest = "*"
 
 [packages]
 sqlalchemy = "*"

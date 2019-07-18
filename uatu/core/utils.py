@@ -16,7 +16,3 @@ def get_relative_path(path: str, cwd: str = os.getcwd()):
 
 def check_file_exists(file_path: str) -> bool:
     pass
-
-
-if __name__ == "__main__":
-    print(get_relative_path('./uatu/cli.py'))

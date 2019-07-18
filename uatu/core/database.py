@@ -8,7 +8,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from .orm import Base, File, Pipeline, Node, Experiment
 from .utils import id_generator, get_relative_path
-from .git import get_file_last_commit, get_tracked_files, add_file
+from .git import get_last_commit, get_tracked_files, add_file, get_repo
 
 
 def initialize_db(db_file: str) -> Session:
@@ -20,8 +20,11 @@ def initialize_db(db_file: str) -> Session:
 
 
 def get_file(
-    sess: Session, file_path: Optional[str] = None, file_id: Optional[str] = None
-) -> File:
+    sess: Session,
+    file_path: Optional[str] = None,
+    file_id: Optional[str] = None,
+    create: bool = True,
+) -> Union[File, None]:
     assert (not file_path is None) or (not file_id is None)
 
     if file_path:
@@ -30,9 +33,7 @@ def get_file(
     if file_id:
         file_ = sess.query(File).filter_by(id=file_id).first()
 
-    if file_:
-        click.echo(f"File {file_.id} {file_.path} exists")
-    else:
+    if (not file_) and create:
         file_ = File(id=id_generator(8, "file"), path=rel_path)
         sess.add(file_)
         sess.commit()
@@ -94,7 +95,8 @@ def get_pipeline(
     sess: Session,
     pipeline_id: Optional[str] = None,
     file_lists: Optional[List[List[str]]] = None,
-) -> Pipeline:
+    create: bool = True,
+) -> Union[Pipeline, None]:
     assert (not pipeline_id is None) or (not file_lists is None)
     file_id_lists = []
 
@@ -112,7 +114,7 @@ def get_pipeline(
             .first()
         )
 
-    if pipeline is None:
+    if (not pipeline) and create:
         for i in range(len(file_lists) - 1):
             if len(file_lists[i]) > 1 and len(file_lists[i + 1]) > 1:
                 raise ValueError("There should be no consecutive multiple files")
@@ -161,23 +163,31 @@ def get_all_pipelines(sess: Session) -> List[Pipeline]:
 def get_node(
     sess: Session,
     node_id: Optional[str] = None,
-    commit_id: Optional[str] = None,
     file_path: Optional[str] = None,
-) -> Node:
-    assert (not node_id is None) or (not commit_id is None and not file_path is None)
+    commit_id: Optional[str] = None,
+    create: bool = True,
+) -> Union[Node, None]:
+    assert (not node_id is None) or (not file_path is None)
     if node_id:
         node = sess.query(Node).filter_by(id=node_id).first()
     else:
-        node_file = get_file(sess, file_path)
-        node = (
-            sess.query(Node)
-            .filter_by(file_id=node_file.id, commit_id=commit_id)
-            .first()
-        )
+        node_file = get_file(sess, file_path, create=create)
+        if node_file:
+            if not commit_id:
+                # FIXME: Maybe should add repo to function arguments
+                commit_id = get_last_commit(get_repo(), file_path)
+            node = (
+                sess.query(Node)
+                .filter_by(file_id=node_file.id, commit_id=commit_id)
+                .first()
+            )
+        else:
+            node = None
 
-    if node:
-        click.echo(f"Node {node.id} {node.file.path} exists")
-    else:
+    if (not node) and create:
+        if not commit_id:
+            commit_id = get_last_commit(get_repo(), file_path)
+        node_file = get_file(sess, file_path=file_path)
         node = Node(
             id=id_generator(16, "node"), file_id=node_file.id, commit_id=commit_id
         )
@@ -238,7 +248,7 @@ def get_experiment(
             if len(file_lists[i]) > 1 and len(file_lists[i + 1]) > 1:
                 raise ValueError("There should be no consecutive multiple files")
             for pred_file_path in file_lists[i]:
-                pred_rel_path = get_relative_path(pred_file_path)
+                pred_rel_path = get_relative_path(pred_file_path, repo.working_dir)
                 if pred_rel_path not in tracked_files:
                     add_file(repo, pred_rel_path)
                     if first_add:
@@ -246,12 +256,12 @@ def get_experiment(
                         first_add = False
                     else:
                         repo.git.commit("-m", description, "--amend")
-                pred_commit_id = get_file_last_commit(repo, pred_rel_path)
+                pred_commit_id = get_last_commit(repo, pred_rel_path)
                 predecessor = get_node(sess, pred_commit_id, pred_file_path)
                 node_id_lists[i].append(predecessor.id)
 
                 for succ_file_path in file_lists[i + 1]:
-                    succ_rel_path = get_relative_path(succ_file_path)
+                    succ_rel_path = get_relative_path(succ_file_path, repo.working_dir)
                     if succ_rel_path not in tracked_files:
                         add_file(repo, succ_rel_path)
                         if first_add:
@@ -259,7 +269,7 @@ def get_experiment(
                             first_add = False
                         else:
                             repo.git.commit("-m", description, "--amend")
-                    succ_commit_id = get_file_last_commit(repo, succ_rel_path)
+                    succ_commit_id = get_last_commit(repo, succ_rel_path)
                     successor = get_node(sess, succ_commit_id, succ_file_path)
                     node_id_lists[i + 1].append(successor.id)
                     add_edge(sess, predecessor, successor)

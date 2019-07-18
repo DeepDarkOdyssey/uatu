@@ -3,3 +3,4 @@
 .uatu/
 .mypy_cache/
 uatu.egg-info/
+.pytest_cache/

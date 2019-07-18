@@ -10,6 +10,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        uatu=uatu.cli:cli
+        uatu=uatu.cli.base:cli
     ''',
 )

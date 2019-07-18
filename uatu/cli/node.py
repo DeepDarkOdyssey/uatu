@@ -2,10 +2,10 @@ import json
 import click
 from typing import Tuple
 from collections import defaultdict
-from tabulate import tabulate
 from .base import cli
-from uatu.database import get_node, get_all_nodes, delete_node
-from uatu.utils import get_relative_path
+from .diagrams import node_summary
+from uatu.core.database import get_node, get_all_nodes, delete_node
+from uatu.core.utils import get_relative_path
 
 
 @cli.group("node")

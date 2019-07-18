@@ -6,7 +6,6 @@ import json
 from sqlalchemy import Column, String, Integer, PickleType, Text, ForeignKey, create_engine
 from sqlalchemy.orm import relationship, sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
-from .utils import id_generator, get_relative_path
 import yaml
 import click
 from .logger import get_logger
