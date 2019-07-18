@@ -9,7 +9,7 @@ from tabulate import tabulate
 def file_summary(file: File) -> str:
     pred_ids = json.loads(file.predecessor_ids)
     succ_ids = json.loads(file.successor_ids)
-    num_rows = max(len(pred_ids), len(succ_ids))
+    num_rows = max(len(pred_ids), len(succ_ids), 1)
     summary = f"[ ID: {file.id} PATH: {file.path} ]"
     header_length = len(summary)
     if len(pred_ids) > 0:
@@ -75,8 +75,8 @@ def file_details(files: List[File]):
 def node_summary(node: Node):
     pred_ids = json.loads(node.predecessor_ids)
     succ_ids = json.loads(node.successor_ids)
-    num_rows = max(len(pred_ids), len(succ_ids))
-    summary = f"[ ID: {node.id} PATH: {node.file.path} COMMIT_ID: {node.commit_id}]"
+    num_rows = max(len(pred_ids), len(succ_ids), 1)
+    summary = f"[ ID: {node.id} PATH: {node.file.path} COMMIT_ID: {node.commit_id[:3]}...{node.commit_id[-3:]}]"
     header_length = len(summary)
     if len(pred_ids) > 0:
         header_length += 12
@@ -121,6 +121,21 @@ def node_summary(node: Node):
 
     return header + "\n" + "\n".join(rows)
 
+
+def node_details(nodes: List[Node]) -> str:
+    table = defaultdict(list)
+    for node in nodes:
+        table["ID"].append(node.id)
+        table["FILE"].append(node.file.path)
+        table["FILE_ID"].append(node.file_id)
+        table["COMMIT_ID"].append(node.commit_id)
+        table["PREDECESSORS"].append(
+            "\n".join(pred_id for pred_id in json.loads(node.predecessor_ids))
+        )
+        table["SUCCESSORS"].append(
+            "\n".join(succ_id for succ_id in json.loads(node.successor_ids))
+        )
+    return tabulate(table, headers="keys", tablefmt="grid")
 
 
 def pipeline_summary(pipeline: Pipeline) -> str:
@@ -182,5 +197,5 @@ def pipeline_details(pipelines: List[Pipeline]):
             "\n".join([expr.id for expr in pipeline.experiments])
         )
 
-    return tabulate(table, headers="keys", tablefmt="grid", stralign='center')
+    return tabulate(table, headers="keys", tablefmt="grid", stralign="center")
 

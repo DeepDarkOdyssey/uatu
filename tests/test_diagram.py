@@ -4,6 +4,7 @@ from uatu.cli.diagrams import (
     file_summary,
     file_details,
     node_summary,
+    node_details,
     pipeline_summary,
     pipeline_details,
 )
@@ -22,10 +23,11 @@ def test_file_diagrams():
 
 def test_node_diagrams():
     nodes = get_all_nodes(sess)
-    print('\nNode summaries')
+    print('\nNode summaries:')
     for node in nodes:
         print(node_summary(node))
-
+    print('\nNode details:')
+    print(node_details(nodes))
 
 
 def test_pipeline_diagrams():

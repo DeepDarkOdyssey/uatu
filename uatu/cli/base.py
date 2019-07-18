@@ -11,7 +11,7 @@ from uatu.core.git import (
     get_changed_files,
     add_file,
     get_last_commit,
-    need_commit
+    need_commit,
 )
 from uatu.core.init import (
     check_uatu_initialized,
@@ -21,6 +21,9 @@ from uatu.core.init import (
 )
 from uatu.core.database import initialize_db, get_node, get_file
 from uatu.core.utils import get_relative_path
+from .node import node_cli
+from .file import file_cli
+from .pipeline import pipeline_cli
 
 
 @click.group()
@@ -91,10 +94,15 @@ def watch(ctx: click.Context, files: Tuple[str], message: str, amend: bool):
                 node = get_node(sess, file_path=file_.path, create=False)
                 if not node:
                     files2watch.add(rel_path)
+            else:
+                files2watch.add(rel_path)
 
     if need_commit(repo):
         if amend:
-            repo.git.commit("--amend")
+            if not message:
+                repo.git.commit("--amend", "--no-edit")
+            else:
+                repo.git.commit("--amend", "-m", message)
         else:
             if not message:
                 message = click.prompt("Please enter a message for `git commit`")
@@ -106,7 +114,7 @@ def watch(ctx: click.Context, files: Tuple[str], message: str, amend: bool):
         commit_id = get_last_commit(repo)
         for file_path in files2watch:
             get_node(sess, file_path=file_path, commit_id=commit_id)
-        click.echo(f"Uatu is now watching {files2watch}, commit_id: {commit_id}")
+        click.echo(f"Uatu is now watching {list(files2watch)}, commit_id: {commit_id}")
 
 
 @cli.command(context_settings={"ignore_unknown_options": True})
@@ -123,3 +131,8 @@ def run(script, args, module):
         else:
             print("running python script")
             subprocess.run("python " + " ".join([script] + list(args)), shell=True)
+
+
+cli.add_command(file_cli)
+cli.add_command(node_cli)
+cli.add_command(pipeline_cli)

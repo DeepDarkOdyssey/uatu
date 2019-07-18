@@ -34,7 +34,7 @@ def get_file(
         file_ = sess.query(File).filter_by(id=file_id).first()
 
     if (not file_) and create:
-        file_ = File(id=id_generator(8, "file"), path=rel_path)
+        file_ = File(id=id_generator(salt="file"), path=rel_path)
         sess.add(file_)
         sess.commit()
     return file_
@@ -114,7 +114,7 @@ def get_pipeline(
             .first()
         )
 
-    if (not pipeline) and create:
+    if (not pipeline) and (not file_lists) and create:
         for i in range(len(file_lists) - 1):
             if len(file_lists[i]) > 1 and len(file_lists[i + 1]) > 1:
                 raise ValueError("There should be no consecutive multiple files")
@@ -125,7 +125,7 @@ def get_pipeline(
                     add_edge(sess, predecessor, successor)
 
         pipeline = Pipeline(
-            id=id_generator(8, "pipeline"), file_id_lists=json.dumps(file_id_lists)
+            id=id_generator(salt="pipeline"), file_id_lists=json.dumps(file_id_lists)
         )
         sess.add(pipeline)
         sess.commit()
@@ -189,7 +189,7 @@ def get_node(
             commit_id = get_last_commit(get_repo(), file_path)
         node_file = get_file(sess, file_path=file_path)
         node = Node(
-            id=id_generator(16, "node"), file_id=node_file.id, commit_id=commit_id
+            id=id_generator(salt="node"), file_id=node_file.id, commit_id=commit_id
         )
         sess.add(node)
         sess.commit()
@@ -275,7 +275,7 @@ def get_experiment(
                     add_edge(sess, predecessor, successor)
 
         experiment = Experiment(
-            id=id_generator(16, "experiment"),
+            id=id_generator(salt="experiment"),
             description=description,
             pipeline_id=pipeline.id,
             node_id_lists=json.dumps(node_id_lists),

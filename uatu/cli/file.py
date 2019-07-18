@@ -2,12 +2,11 @@ import json
 import click
 from typing import Tuple
 from collections import defaultdict
-from .base import cli
 from .diagrams import file_details, file_summary
 from uatu.core.database import get_file, get_all_files, delete_file
 
 
-@cli.group("file")
+@click.group("file")
 @click.pass_context
 def file_cli(ctx: click.Context):
     pass
@@ -20,10 +19,10 @@ def file_ls(ctx: click.Context, files: Tuple[str]):
     if files:
         for file_path in files:
             file_ = get_file(ctx.obj["sess"], file_path=file_path, create=False)
-            if not file_:
-                click.echo(f"{file_path} is not under Uatu's watch!")
-            else:
+            if file_:
                 click.echo(file_summary(file_))
+            else:
+                click.echo(f"{file_path} is not under Uatu's watch!")
 
     else:
         files = get_all_files(ctx.obj["sess"])
@@ -39,10 +38,10 @@ def file_show(ctx: click.Context, file_ids: Tuple[str]):
         files = []
         for file_id in file_ids:
             file_ = get_file(ctx.obj["sess"], file_id=file_id)
-            if not file_:
-                click.echo(f"{file_id} is not a Uatu's file id")
-            else:
+            if file_:
                 files.append(file_)
+            else:
+                click.echo(f"{file_id} is not a Uatu's file id")
 
     else:
         files = get_all_files(sess=ctx.obj["sess"])
