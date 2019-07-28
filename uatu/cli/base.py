@@ -4,7 +4,7 @@ from os import getcwd
 from typing import Tuple
 from sqlalchemy.orm import Session
 from git import Repo
-from uatu.core.git import (
+from ..core.git import(
     check_git_initialized,
     initialize_git,
     get_repo,
@@ -13,14 +13,14 @@ from uatu.core.git import (
     get_last_commit,
     need_commit,
 )
-from uatu.core.init import (
+from ..core.init import (
     check_uatu_initialized,
     initialize_uatu,
     get_uatu_config,
     clean_uatu,
 )
-from uatu.core.database import initialize_db, get_node, get_file
-from uatu.core.utils import get_relative_path
+from ..core.database import initialize_db, get_node, get_file
+from ..core.utils import get_relative_path
 from .node import node_cli
 from .file import file_cli
 from .pipeline import pipeline_cli
