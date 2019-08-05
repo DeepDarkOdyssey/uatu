@@ -1,7 +1,8 @@
 import click
 import subprocess
+import yaml
 from os import getcwd
-from typing import Tuple
+from typing import Tuple, Optional, NoReturn
 from sqlalchemy.orm import Session
 from git import Repo
 from ..core.git import(
@@ -40,8 +41,16 @@ def cli(ctx: click.Context):
 
 
 @cli.command()
-@click.option("--config_file", type=click.Path(exists=True, dir_okay=False))
-def init(config_file):
+@click.option("--config_file", "-c", type=click.Path(exists=True, dir_okay=False))
+@click.option("--database_file", "-d", type=click.Path(exists=False, dir_okay=False))
+@click.option("--experiment_dir", "-e", type=click.Path(exists=False, file_okay=False))
+@click.option("--log_file", "-l", type=click.Path(exists=False, dir_okay=False))
+def init(
+    config_file: Optional[str],
+    database_file: Optional[str],
+    experiment_dir: Optional[str],
+    log_file: Optional[str],
+) -> NoReturn:
     if not check_git_initialized():
         click.confirm(
             "This folder is not a git repo, do you want to initialize git?",
@@ -58,7 +67,17 @@ def init(config_file):
             default=False,
             abort=True,
         )
-    initialize_uatu(user_config=config_file)
+    user_config = {}
+    if config_file:
+        user_config = yaml.safe_load(config_file)
+    if database_file:
+        user_config['database_file'] = database_file
+    if experiment_dir:
+        user_config['experiment_dir'] = experiment_dir
+    if log_file:
+        user_config['log_file'] = log_file
+    
+    initialize_uatu(user_config=user_config)
     click.echo("Uatu has arrived!")
 
 

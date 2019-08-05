@@ -1,7 +1,7 @@
 import os
 from os.path import join, exists
 from shutil import rmtree
-from typing import Union
+from typing import Union, Optional
 import json
 from sqlalchemy import Column, String, Integer, PickleType, Text, ForeignKey, create_engine
 from sqlalchemy.orm import relationship, sessionmaker, Session
@@ -39,20 +39,20 @@ def clean_uatu(dir_path=os.getcwd()):
 
 
 def initialize_uatu(dir_path: str = os.getcwd(),
-                    user_config: str = None) -> Session:
+                    user_config: Optional[dict] = None) -> Session:
     clean_uatu(dir_path)
 
     uatu_dir = join(dir_path, '.uatu')
     os.mkdir(uatu_dir)
-    if user_config is None:
-        uatu_config = {
-            'database_file': '.uatu/uatu.db',
-            'experiment_dir': 'experiments',
-            'log_file': '.uatu/log.txt'
-        }
-    else:
-        with open(user_config) as f:
-            uatu_config = yaml.safe_load(f)
+    uatu_config = {
+        'database_file': '.uatu/uatu.db',
+        'experiment_dir': 'experiments',
+        'log_file': '.uatu/log.txt'
+    }
+    if user_config:
+        for key, value in user_config.items():
+            if key in uatu_config:
+                uatu_config[key] = value
 
     with open(join(uatu_dir, 'config.yaml'), 'w') as yaml_file:
         yaml.dump(uatu_config, yaml_file)
