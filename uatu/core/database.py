@@ -6,7 +6,7 @@ from git import Repo
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
-from .orm import Base, File, Pipeline, Node, Experiment
+from .orm import Base, File, Pipeline, Record, Experiment
 from .utils import id_generator, get_relative_path
 from .git import get_last_commit, get_tracked_files, add_file, get_repo
 
@@ -68,7 +68,7 @@ def get_all_files(sess: Session) -> List[File]:
 
 
 def add_edge(
-    sess: Session, predecessor: Union[File, Node], successor: Union[File, Node]
+    sess: Session, predecessor: Union[File, Record], successor: Union[File, Record]
 ) -> NoReturn:
     preds_successor_ids = deepcopy(set(json.loads(predecessor.successor_ids)))
     preds_successor_ids.add(successor.id)
@@ -80,7 +80,7 @@ def add_edge(
 
 
 def delete_edge(
-    sess: Session, predecessor: Union[File, Node], successor: Union[File, Node]
+    sess: Session, predecessor: Union[File, Record], successor: Union[File, Record]
 ) -> NoReturn:
     preds_successor_ids = deepcopy(set(json.loads(predecessor.successor_ids)))
     preds_successor_ids.remove(successor.id)
@@ -166,10 +166,10 @@ def get_node(
     file_path: Optional[str] = None,
     commit_id: Optional[str] = None,
     create: bool = True,
-) -> Union[Node, None]:
+) -> Union[Record, None]:
     assert (not node_id is None) or (not file_path is None)
     if node_id:
-        node = sess.query(Node).filter_by(id=node_id).first()
+        node = sess.query(Record).filter_by(id=node_id).first()
     else:
         node_file = get_file(sess, file_path, create=create)
         if node_file:
@@ -177,7 +177,7 @@ def get_node(
                 # FIXME: Maybe should add repo to function arguments
                 commit_id = get_last_commit(get_repo(), file_path)
             node = (
-                sess.query(Node)
+                sess.query(Record)
                 .filter_by(file_id=node_file.id, commit_id=commit_id)
                 .first()
             )
@@ -188,7 +188,7 @@ def get_node(
         if not commit_id:
             commit_id = get_last_commit(get_repo(), file_path)
         node_file = get_file(sess, file_path=file_path)
-        node = Node(
+        node = Record(
             id=id_generator(salt="node"), file_id=node_file.id, commit_id=commit_id
         )
         sess.add(node)
@@ -197,7 +197,7 @@ def get_node(
 
 
 def delete_node(
-    sess: Session, node: Optional[Node] = None, node_id: Optional[str] = None
+    sess: Session, node: Optional[Record] = None, node_id: Optional[str] = None
 ) -> NoReturn:
     assert (not node is None) or (not node_id is None)
     if not node:
@@ -212,8 +212,8 @@ def delete_node(
     sess.commit()
 
 
-def get_all_nodes(sess: Session) -> List[Node]:
-    return sess.query(Node).all()
+def get_all_nodes(sess: Session) -> List[Record]:
+    return sess.query(Record).all()
 
 
 def get_experiment(

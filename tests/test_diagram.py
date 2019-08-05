@@ -23,10 +23,10 @@ def test_file_diagrams():
 
 def test_node_diagrams():
     nodes = get_all_nodes(sess)
-    print('\nNode summaries:')
+    print('\nRecord summaries:')
     for node in nodes:
         print(node_summary(node))
-    print('\nNode details:')
+    print('\nRecord details:')
     print(node_details(nodes))
 
 

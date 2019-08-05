@@ -11,19 +11,19 @@ class File(Base):  # type: ignore
 
     id = Column(String(8), primary_key=True)
     path = Column(String(64), unique=True, index=True, nullable=False)
-    nodes = relationship("Node", backref="file")
+    records = relationship("Record", backref="file")
     predecessor_ids = Column(Text, default="[]")
     successor_ids = Column(Text, default="[]")
 
     def __repr__(self):
         return (
-            f"<File id={self.id}, path={self.path}, nodes={self.nodes},"
+            f"<File id={self.id}, path={self.path}, records={self.records},"
             f"predecessor_ids={self.predecessor_ids}, successor_ids={self.successor_ids}>"
         )
 
 
-class Node(Base):  # type: ignore
-    __tablename__ = "nodes"
+class Record(Base):  # type: ignore
+    __tablename__ = "Records"
 
     id = Column(String(16), primary_key=True)
     file_id = Column(String(8), ForeignKey("files.id"))
@@ -33,7 +33,7 @@ class Node(Base):  # type: ignore
 
     def __repr__(self):
         return (
-            f"<Node id={self.id}, file_id={self.file_id}, file={self.file},"
+            f"<Record id={self.id}, file_id={self.file_id}, file={self.file},"
             f"commit_id={self.commit_id}, predecessor_ids={self.predecessor_ids},"
             f"successor_ids={self.successor_ids}>"
         )

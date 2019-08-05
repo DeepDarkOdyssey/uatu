@@ -23,7 +23,7 @@ def node_ls(ctx: click.Context, node_ids: Tuple[str]):
             if node:
                 click.echo(node_summary(node))
             else:
-                click.echo(f'Node {node_id} not exists!')
+                click.echo(f'Record {node_id} not exists!')
 
     else:
         nodes = get_all_nodes(ctx.obj["sess"])
@@ -42,7 +42,7 @@ def node_show(ctx: click.Context, node_ids: Tuple[str]):
             if node:
                 nodes.append(node)
             else:
-                click.echo(f'Node {node_id} not exists!')
+                click.echo(f'Record {node_id} not exists!')
 
     else:
         nodes = get_all_nodes(sess=ctx.obj["sess"])

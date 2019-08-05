@@ -2,7 +2,7 @@ import json
 from collections import defaultdict
 from functools import reduce
 from typing import List, Union
-from uatu.core.orm import File, Node, Pipeline, Experiment
+from uatu.core.orm import File, Record, Pipeline, Experiment
 from tabulate import tabulate
 
 
@@ -72,7 +72,7 @@ def file_details(files: List[File]):
     return tabulate(table, headers="keys", tablefmt="grid")
 
 
-def node_summary(node: Node):
+def node_summary(node: Record):
     pred_ids = json.loads(node.predecessor_ids)
     succ_ids = json.loads(node.successor_ids)
     num_rows = max(len(pred_ids), len(succ_ids), 1)
@@ -122,7 +122,7 @@ def node_summary(node: Node):
     return header + "\n" + "\n".join(rows)
 
 
-def node_details(nodes: List[Node]) -> str:
+def node_details(nodes: List[Record]) -> str:
     table = defaultdict(list)
     for node in nodes:
         table["ID"].append(node.id)
